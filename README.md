@@ -1,5 +1,9 @@
 # 翻頁島 PopIsle｜立體書學習平台 DEMO
 
+**線上 DEMO：https://for995-ai.github.io/popisle-demo/**
+
+> GitHub 版沒有連 AI：AI 自編課、AI 插圖和 Claude 語音只在 claude.ai 版運作。離線時可以試範例主題「人體的器官認識」（國一下・自然）和三課範例。
+
 ## 怎麼開
 直接用 Chrome 或 Edge 開啟 `index.html`（雙擊即可，不需要安裝任何東西）。
 連上網路時字體會比較好看；沒有網路也能跑。
