@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>翻頁島 PopIsle｜立體書學習平台 DEMO</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@600;900&family=Noto+Sans+TC:wght@400;500;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root { --navy: #0f1d3d; --line: rgba(160, 196, 255, .14); --ink: #e9eefc; --mute: #9fb0d6; --gold: #e8c46a; --red: #e0644f; --ok: #6fd3a0; --card: rgba(14, 28, 60, .86); --edge: rgba(160, 196, 255, .35); }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; color: var(--ink); font-family: "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif; }
+  body { background: linear-gradient(var(--line) 1px, transparent 1px) 0 0 / 48px 48px, linear-gradient(90deg, var(--line) 1px, transparent 1px) 0 0 / 48px 48px, radial-gradient(ellipse at 40% 45%, #1d3a78 0%, var(--navy) 70%); background-color: var(--navy); overflow: hidden; }
+  .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; letter-spacing: .08em; text-transform: uppercase; }
+  .serif { font-family: "Noto Serif TC", "PMingLiU", serif; }
+  button { white-space: nowrap; font: inherit; color: var(--ink); background: rgba(20, 40, 84, .9); border: 1px solid var(--edge); border-radius: 999px; padding: 10px 18px; cursor: pointer; transition: background .15s, border-color .15s, transform .1s; }
+  button:hover { background: #22407e; border-color: var(--gold); }
+  button:active { transform: scale(.97); }
+  button.primary { background: var(--gold); color: #1b1606; border-color: var(--gold); font-weight: 700; }
+  button.primary:hover { background: #f3d385; }
+  button:disabled { opacity: .45; cursor: default; }
+  button:focus-visible, textarea:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+  /* ---------- top bar + screens ---------- */
+  .top { position: fixed; z-index: 30; left: 0; right: 0; top: 0; height: 54px; display: flex; align-items: center; gap: 10px; padding: 0 18px; background: rgba(9, 18, 40, .82); backdrop-filter: blur(6px); border-bottom: 1px solid var(--line); }
+  .brand { display: flex; align-items: baseline; gap: 8px; cursor: pointer; margin-right: auto; }
+  .brand b { font-family: "Noto Serif TC", serif; font-size: 20px; font-weight: 900; }
+  .brand span { font-size: 11px; color: var(--gold); }
+  .top button { padding: 6px 13px; font-size: 13px; }
+  .top button.on { border-color: var(--gold); color: var(--gold); }
+  .scr { position: fixed; inset: 54px 0 0 0; display: none; }
+  .scr.on { display: block; }
+  .scroll { overflow-y: auto; }
+
+  /* ---------- start ---------- */
+  #scrStart .hero { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 24px; }
+  .hero .k { font-size: 12px; color: var(--gold); }
+  .hero h1 { font-family: "Noto Serif TC", serif; font-weight: 900; font-size: clamp(34px, 6vw, 68px); margin: 14px 0 10px; line-height: 1.25; text-wrap: balance; }
+  .hero p { color: var(--mute); font-size: clamp(15px, 1.8vw, 19px); max-width: 640px; line-height: 1.8; margin: 0 0 30px; }
+  .hero .row { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
+  .hero .row button { padding: 14px 26px; font-size: 16px; }
+  .hero .flow { margin-top: 44px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; font-size: 13px; color: var(--mute); }
+  .hero .flow span { border: 1px dashed var(--edge); border-radius: 999px; padding: 6px 14px; }
+  .hero .flow i { font-style: normal; color: var(--gold); align-self: center; }
+
+  /* ---------- upload ---------- */
+  .upwrap { max-width: 1120px; margin: 0 auto; padding: 28px 22px 60px; display: grid; grid-template-columns: 1.05fr .95fr; gap: 22px; }
+  .box { background: var(--card); border: 1px solid var(--edge); border-radius: 18px; padding: 22px; }
+  .box h2 { margin: 0 0 4px; font-size: 20px; }
+  .box .sub2 { color: var(--mute); font-size: 13.5px; line-height: 1.7; margin-bottom: 14px; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .chips button { padding: 8px 16px; }
+  .chips button.on { background: var(--gold); color: #1b1606; border-color: var(--gold); font-weight: 700; }
+  textarea { width: 100%; border-radius: 12px; border: 1px solid var(--edge); background: rgba(0, 0, 0, .28); color: var(--ink); font: inherit; line-height: 1.8; padding: 12px 14px; resize: vertical; }
+  #material { min-height: 250px; font-size: 14.5px; }
+  .uprow { display: flex; gap: 10px; align-items: center; margin-top: 12px; flex-wrap: wrap; }
+  .uprow .grow { flex: 1; font-size: 12.5px; color: var(--mute); }
+  .steps2 { list-style: none; margin: 0; padding: 0; }
+  .steps2 li { display: grid; grid-template-columns: 28px 1fr; gap: 10px; padding: 11px 0; border-bottom: 1px dashed var(--line); opacity: .4; transition: opacity .3s; }
+  .steps2 li.act, .steps2 li.fin { opacity: 1; }
+  .steps2 .dot { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--edge); display: grid; place-items: center; font-size: 12px; }
+  .steps2 li.act .dot { border-color: var(--gold); border-top-color: transparent; animation: spin .8s linear infinite; }
+  .steps2 li.fin .dot { background: var(--ok); border-color: var(--ok); color: #06301c; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .steps2 .t { font-weight: 700; font-size: 14.5px; }
+  .steps2 .r { font-size: 13px; color: var(--mute); margin-top: 5px; line-height: 1.7; }
+  .tagc { display: inline-block; font-size: 12.5px; padding: 2px 10px; border-radius: 999px; background: rgba(232, 196, 106, .14); border: 1px solid rgba(232, 196, 106, .4); margin: 3px 4px 0 0; color: var(--ink); }
+  .tagc.star { background: var(--gold); color: #1b1606; font-weight: 700; }
+  .thumbs { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .thumbs img { height: 46px; background: rgba(255, 255, 255, .08); border-radius: 6px; padding: 3px; }
+  .fine { font-size: 12px; color: var(--mute); line-height: 1.7; margin-top: 12px; border-left: 3px solid var(--gold); padding-left: 10px; }
+
+  /* ---------- map ---------- */
+  #scrMap { overflow: hidden; }
+  #map3d { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: pointer; touch-action: none; }
+  #mapLabels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+  .mlabel { position: absolute; left: 0; top: 0; pointer-events: auto; cursor: pointer; text-align: center; padding: 6px 14px 7px; border-radius: 14px; background: rgba(255, 255, 255, .92); color: #1b2a55; box-shadow: 0 4px 0 rgba(20, 60, 110, .35); white-space: nowrap; transition: background .2s, box-shadow .2s; }
+  .mlabel b { display: block; font-size: 15px; } .mlabel span { font-size: 12px; color: #4a5a85; }
+  .mlabel.alive { background: #fff7d6; } .mlabel.alive span { color: #9a6a12; font-weight: 700; }
+  .mlabel.done { background: #dcf7e8; } .mlabel.done span { color: #1c7a4a; }
+  .mlabel.plan { background: rgba(255, 255, 255, .6); }
+  .mlabel.near { box-shadow: 0 4px 0 #e8a23a, 0 0 0 3px #ffd45a; }
+  .maphead { position: absolute; left: 20px; top: 16px; pointer-events: none; background: rgba(11, 24, 54, .78); border-radius: 16px; padding: 12px 16px; max-width: 360px; }
+  .maphead .k { font-size: 11px; color: var(--mute); }
+  .maphead .t { font-size: 20px; font-weight: 700; margin-top: 3px; }
+  .maphead .t b { color: var(--gold); }
+  .mapnote { font-size: 12.5px; color: var(--mute); line-height: 1.7; margin-top: 6px; }
+  .mapact { position: absolute; right: 20px; top: 18px; display: flex; gap: 8px; }
+  .dock { position: absolute; left: 50%; bottom: 22px; transform: translate(-50%, 140%); transition: transform .35s cubic-bezier(.3, 1.4, .5, 1); width: min(620px, 94%); background: rgba(11, 24, 54, .94); border: 2px solid var(--gold); border-radius: 20px; padding: 14px 18px; display: flex; gap: 16px; align-items: center; justify-content: space-between; box-shadow: 0 12px 30px rgba(0, 30, 70, .45); }
+  .dock.show { transform: translate(-50%, 0); }
+  .dock .k { font-size: 11px; color: var(--gold); } .dock .t { font-size: 19px; font-weight: 700; margin: 2px 0; } .dock .b { font-size: 13px; color: var(--mute); line-height: 1.6; }
+  .dock button { padding: 13px 22px; font-size: 16px; flex: none; }
+  .dbtns { display: flex; gap: 8px; flex: none; } .dbtns button { padding: 13px 18px; font-size: 15px; }
+  #upTitle, .fl input { width: 100%; border-radius: 10px; border: 1px solid var(--edge); background: rgba(0, 0, 0, .28); color: var(--ink); font: inherit; padding: 9px 12px; margin-bottom: 10px; }
+  #confirmBox { margin-top: 16px; padding-top: 16px; border-top: 1px dashed var(--edge); }
+  .trow { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; } .fl select { width: 100%; border-radius: 10px; border: 1px solid var(--edge); background: #1d2433; color: var(--ink); font: inherit; padding: 9px 12px; margin: 6px 0 0; } .thumbs img.artth { height: 84px; background: #efe3c8; padding: 2px; } .pgc img { float: left; height: 78px; margin: 2px 12px 2px 0; border-radius: 8px; background: #efe3c8; } .pgc { overflow: hidden; margin-bottom: 6px; } .curbox { border: 1px solid rgba(232, 196, 106, .5); }
+
+  /* the left page of the book: text on top, the question underneath, the pop-up scene on the right */
+  .app { perspective: 2200px; }
+  .app:not(.reading) { grid-template-columns: 1fr; } .app:not(.reading) .leafpage { display: none; }
+  .app.reading { grid-template-columns: minmax(380px, 43%) 1fr; }
+  .panel.leafpage { order: -1; border: 0; color: #2a2018; background: linear-gradient(90deg, #f3ead3 0, #f9f2e0 12%, #f7efdc 86%, #e6dabd 97%, #d3c5a3 100%); box-shadow: inset -14px 0 22px -14px rgba(60, 40, 10, .45); transform-origin: 100% 50%; animation: leafIn .75s cubic-bezier(.2, .8, .3, 1); position: relative; z-index: 2; backdrop-filter: none; }
+  @keyframes leafIn { from { transform: rotateY(-78deg); opacity: .2; } }
+  .leafpage::before { content: ""; position: absolute; inset: 14px 26px 14px 14px; border: 1px solid rgba(160, 60, 40, .28); border-radius: 3px; pointer-events: none; }
+  .leafpage .tabs { border: 0; padding: 20px 44px 0 30px; align-items: center; gap: 4px; } .leafpage .pgno { flex: 1; font-size: 11px; color: #a0661c; letter-spacing: .06em; }
+  .leafpage .tabs button { flex: none; padding: 3px 10px; font-size: 12px; color: #8a7a60; border: 0; border-radius: 999px; background: transparent; } .leafpage .tabs button.on { color: #2a2018; background: #eadcbd; border: 0; }
+  .leafpage .pane { padding: 8px 44px 22px 30px; } .leafpage .pane.on#pane-text { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+  .leafpage .goalbox { background: rgba(58, 157, 110, .09); border-color: rgba(58, 157, 110, .4); margin-bottom: 8px; padding: 6px 12px; } .leafpage .goalbox .gk { color: #1f6a47; } .leafpage .goalbox ul { color: #2a2018; }
+  .leafpage .tools { align-items: center; } .leafpage .tools .grow { flex: 1; }
+  .leafpage .readbtn, .leafpage #copyStyle { background: #fffaf0; color: #4a3a22; border: 1px solid #d5c4a0; margin-bottom: 6px; padding: 4px 10px; font-size: 12.5px; }
+  .leafpage .textwrap { flex: 1 1 auto; min-height: 90px; overflow-y: auto; padding-right: 4px; }
+  .leafpage .classic { font-size: 19.5px; line-height: 1.95; color: #2a2018; } .leafpage .classic .hs { color: #a35a12; border-bottom-color: rgba(163, 90, 18, .6); } .leafpage .classic .hs:hover, .leafpage .classic .hs.on { background: rgba(232, 196, 106, .4); } .leafpage .classic .sp { color: #8a7a60; }
+  .leafpage .plain { background: rgba(160, 110, 40, .1); color: #3a2c1c; }
+  .leafpage .gloss { margin-top: 8px; padding: 8px 12px; min-height: 0; background: #fffaf0; border-color: #d9c7a0; } .leafpage .gloss.empty { background: transparent; border-style: dashed; padding: 5px 12px; } .leafpage .gloss.empty .w { display: none; } .leafpage .gloss.empty .d { margin: 0; font-size: 12.5px; color: #9a8a70; }
+  .leafpage .gloss .w { color: #a35a12; font-size: 17px; } .leafpage .gloss .d { font-size: 13.5px; margin-top: 2px; } .leafpage .gloss .fx { color: #1f6a47; margin-top: 2px; }
+  .leafpage .pdots { margin: 8px 0 0; } .leafpage .pdots i { background: #e0d3b4; } .leafpage .pdots i.on { background: #d19a2a; } .leafpage .pdots i.done { background: #3a9d6e; }
+  .leafpage .notice { background: rgba(209, 154, 42, .12); border-color: rgba(209, 154, 42, .45); color: #3a2c1c; } .leafpage .log, .leafpage .src { color: #6a5a45; border-color: #dccfb2; } .leafpage .pane h2 { color: #8a7a60; } .leafpage pre { color: #3a2c1c; background: rgba(0, 0, 0, .05); }
+  .leafpage.exam .textwrap, .leafpage.exam .tools, .leafpage.exam .goalbox, .leafpage.exam .pdots { display: none; }
+  .bookq { display: none; flex: none; margin-top: 10px; border-top: 2px dashed #d9c7a0; padding-top: 10px; max-height: 62%; overflow-y: auto; } .leafpage.exam .bookq { border: 0; max-height: none; flex: 1; }
+  .bookq.show { display: block; }
+  .bookq button.bq-pill { display: block; width: 100%; text-align: left; background: #fffaf0; color: #2a2018; border-radius: 12px; padding: 10px 14px; font-weight: 700; font-size: 14.5px; line-height: 1.55; border: 2px solid #d19a2a; white-space: normal; animation: bqpulse 2s ease-in-out infinite; }
+  .bookq button.bq-pill.ok { border-color: #3a9d6e; color: #1f6a47; background: #e9f6ee; animation: none; font-weight: 500; cursor: default; }
+  @keyframes bqpulse { 50% { box-shadow: 0 0 0 5px rgba(232, 196, 106, .45); } }
+  .bookq.open .bq-pill, .bookq:not(.open) .bq-card { display: none; } .bq-card { animation: bqin .3s ease-out; } @keyframes bqin { from { opacity: 0; transform: translateY(8px); } }
+  .bq-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; } .bq-head .bq-tag { font-size: 11px; color: #a0661c; flex: 1; letter-spacing: .04em; }
+  .bq-dots i { display: inline-block; width: 16px; height: 5px; border-radius: 3px; background: #dccfb2; margin-left: 3px; } .bq-dots i.done { background: #3a9d6e; } .bq-dots i.on { background: #d19a2a; }
+  .bq-stem { font-family: "Noto Serif TC", serif; font-size: 17px; font-weight: 700; line-height: 1.6; margin-bottom: 2px; } .leafpage.exam .bq-stem { font-size: 20px; margin: 8px 0 6px; }
+  .bq-note { font-size: 12.5px; color: #8a7a60; margin: 2px 0 2px; }
+  .bookq button.bq-opt { display: flex; gap: 10px; align-items: flex-start; width: 100%; text-align: left; white-space: normal; background: #fffdf7; color: #2a2018; border: 1.5px solid #d9c7a0; border-radius: 11px; padding: 7px 11px; margin-top: 6px; font-size: 14.5px; line-height: 1.5; font-weight: 400; transition: transform .12s, border-color .12s, background .12s; }
+  .leafpage.exam .bookq button.bq-opt { padding: 11px 13px; font-size: 15.5px; margin-top: 9px; }
+  .bookq button.bq-opt b { flex: none; width: 22px; height: 22px; border-radius: 50%; background: #efe3c8; color: #6a4a1c; font: 700 12px/22px "IBM Plex Mono", monospace; text-align: center; }
+  .bookq button.bq-opt:hover:not(:disabled) { border-color: #d19a2a; transform: translateX(3px); }
+  .bookq button.bq-opt.right { background: #dcf3e6; border-color: #3a9d6e; } .bookq button.bq-opt.right b { background: #3a9d6e; color: #fff; }
+  .bookq button.bq-opt.wrong { background: #f9e0da; border-color: #c9523f; animation: bqshake .3s; } .bookq button.bq-opt.wrong b { background: #c9523f; color: #fff; }
+  .bookq button.bq-opt:disabled { opacity: 1; cursor: default; }
+  .bq-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; } .bookq .bq-row button.bq-opt { width: auto; padding: 7px 14px 7px 9px; margin: 0; align-items: center; }
+  @keyframes bqshake { 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+  .bq-fb { font-size: 13.5px; line-height: 1.65; margin-top: 8px; color: #8a4a1e; } .bq-fb.ok { color: #1f6a47; } .bq-fb:empty { display: none; }
+  .bq-body textarea { width: 100%; min-height: 90px; margin-top: 8px; background: #fff; color: #2a2018; border: 1.5px solid #d9c7a0; border-radius: 10px; padding: 8px 10px; font: inherit; font-size: 15px; }
+  .bookq button.bq-sub { margin-top: 8px; background: #efe3c8; color: #4a3a22; border: 1px solid #cdbb95; border-radius: 10px; padding: 6px 12px; font-size: 13px; } .bookq button.bq-sub:disabled { opacity: .5; }
+  .bookq button.bq-next { width: 100%; margin-top: 10px; }
+  .stage.point #gl { cursor: crosshair; }
+  #pageArt { display: none; } #pageArt.big { display: flex; position: fixed; inset: 5vh 5vw; z-index: 90; margin: 0; cursor: zoom-out; flex-direction: column; justify-content: center; background: #efe3c8; border-radius: 14px; padding: 10px; text-align: center; box-shadow: 0 0 0 100vmax rgba(8, 12, 22, .8); } #pageArt.big img { max-height: 80vh; max-width: 100%; object-fit: contain; margin: 0 auto; } #pageArt figcaption { font-size: 13px; color: #6a5a45; padding-top: 6px; }
+  #btnTurn { display: none; }
+  .goalbox .gk { cursor: pointer; } .goalbox .gk::after { content: "　▾"; } .goalbox.mini .gk::after { content: "　▸ 點開看"; } .goalbox.mini ul { display: none; } .goalbox.mini { padding-bottom: 8px; }
+  .fl { display: block; font-size: 12.5px; color: var(--gold); margin: 12px 0 6px; } .fl input { margin: 6px 0 0; }
+  .tbtn { cursor: pointer; font-size: 13px; } .pv { font-size: 13px; line-height: 1.8; color: var(--ink); background: rgba(0, 0, 0, .22); border-radius: 10px; padding: 8px 12px; }
+  .dwrap { max-width: 1040px; margin: 0 auto; padding: 26px 22px 60px; } .dtop { display: flex; gap: 20px; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; margin-bottom: 18px; } .dtop h1 { margin: 4px 0 0; font-size: 28px; } .dtop .k { font-size: 11px; color: var(--gold); }
+  .dcard { margin-bottom: 18px; } .dhead { display: flex; gap: 18px; align-items: center; } .dhead > div:first-child { flex: 1; } .dhead .k { font-size: 11px; color: var(--gold); } .dhead h2 { margin: 2px 0 0; }
+  .dnum { text-align: center; font-size: 12px; color: var(--mute); } .dnum b { display: block; font: 600 24px "IBM Plex Mono", monospace; color: var(--gold); }
+  .dgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-top: 12px; } .dgrid h3 { font-size: 13px; color: var(--mute); font-weight: 500; margin: 0 0 8px; }
+  .brow { display: grid; grid-template-columns: 96px 1fr 40px; gap: 8px; align-items: center; font-size: 13px; margin: 6px 0; } .brow b { font: 500 12px "IBM Plex Mono", monospace; text-align: right; }
+  .btrack { height: 10px; border-radius: 6px; background: rgba(255, 255, 255, .08); overflow: hidden; } .bfill { height: 100%; border-radius: 6px; background: #7fa6e8; } .bfill.bad { background: var(--red); } .bfill.ok { background: var(--ok); }
+  .dtip { margin-top: 12px; font-size: 13.5px; line-height: 1.7; background: rgba(232, 196, 106, .1); border-left: 3px solid var(--gold); border-radius: 6px; padding: 9px 12px; }
+  .dme { margin-top: 10px; font-size: 12.5px; line-height: 1.7; color: var(--mute); }
+  .goalbox { background: rgba(111, 211, 160, .08); border: 1px solid rgba(111, 211, 160, .35); border-radius: 12px; padding: 10px 14px; margin-bottom: 14px; } .goalbox .gk { font-size: 11px; color: var(--ok); } .goalbox ul { margin: 6px 0 0; padding-left: 18px; font-size: 13.5px; line-height: 1.75; }
+  .pdots { display: flex; gap: 6px; margin-top: 12px; } .pdots i { flex: 1; height: 5px; border-radius: 3px; background: rgba(255, 255, 255, .14); } .pdots i.on { background: var(--gold); } .pdots i.done { background: var(--ok); }
+  .pgc { margin-bottom: 8px; }
+  .tools { display: flex; gap: 6px; flex-wrap: wrap; } .plain { margin-top: 12px; padding: 12px 14px; border-radius: 12px; background: rgba(255, 255, 255, .06); font-size: 15px; line-height: 1.9; }
+  /* ---------- lesson ---------- */
+  .app { display: grid; grid-template-columns: 1fr 400px; height: 100%; }
+  .stage { position: relative; min-height: 0; overflow: hidden; }
+  #gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; }
+  #gl:active { cursor: grabbing; }
+  .bar { position: absolute; left: 0; right: 0; height: 0; background: #050a18; transition: height .7s ease; pointer-events: none; z-index: 2; }
+  .bar.t { top: 0; } .bar.b { bottom: 0; }
+  .stage.cine .bar { height: 7%; }
+  .tag { position: absolute; left: 22px; top: 16px; pointer-events: none; z-index: 3; }
+  .tag .k { font-size: 11px; color: var(--mute); }
+  .tag .t { font-size: 21px; font-weight: 700; margin-top: 3px; }
+  .tag .t b { color: var(--gold); font-weight: 700; }
+  .counter { position: absolute; left: 22px; top: 80px; padding: 9px 14px; border: 1px solid rgba(232, 196, 106, .45); background: rgba(10, 20, 45, .7); border-radius: 10px; z-index: 3; display: none; }
+  .counter .k { font-size: 10px; color: var(--mute); }
+  .counter .v { font-family: "IBM Plex Mono", monospace; font-size: 23px; color: var(--gold); }
+  .steps { position: absolute; right: 16px; top: 14px; display: flex; gap: 5px; z-index: 3; }
+  .steps button { padding: 5px 11px; font-size: 12px; background: rgba(10, 20, 45, .75); color: var(--mute); }
+  .steps button.on { color: #1b1606; background: var(--gold); border-color: var(--gold); font-weight: 700; }
+  .steps button.done { color: var(--ink); border-color: rgba(111, 211, 160, .6); }
+  .controls { position: absolute; left: 50%; bottom: 20px; transform: translateX(-50%); display: flex; gap: 8px; z-index: 4; }
+  .prog { position: absolute; left: 0; bottom: 0; height: 4px; background: var(--gold); width: 0; z-index: 4; transition: width .3s linear; }
+  .hint { position: absolute; left: 50%; bottom: 76px; transform: translateX(-50%); font-size: 13px; color: var(--mute); pointer-events: none; transition: opacity .4s; white-space: nowrap; }
+  .sub { position: absolute; left: 50%; bottom: 84px; transform: translateX(-50%); width: min(720px, 88%); background: rgba(251, 246, 234, .97); color: #2a2018; border-radius: 16px; padding: 13px 20px; box-shadow: 0 10px 30px rgba(0, 0, 0, .4); display: none; align-items: baseline; gap: 12px; z-index: 3; }
+  .sub.show { display: flex; animation: subin .25s ease; }
+  @keyframes subin { from { opacity: 0; transform: translate(-50%, 8px); } }
+  .sub .who { flex: none; font-size: 13px; font-weight: 700; padding: 3px 10px; border-radius: 999px; color: #fff; }
+  .sub .line { font-family: "Noto Serif TC", serif; font-size: clamp(17px, 2vw, 21px); line-height: 1.6; font-weight: 600; }
+  .sub.narr .line { color: #5a4c3a; }
+  .emote { position: absolute; z-index: 3; width: 54px; height: 54px; margin: -70px 0 0 -27px; border-radius: 50% 50% 50% 8px; background: #fff; color: #c8402f; display: none; place-items: center; font: 900 26px "Noto Serif TC", serif; box-shadow: 0 6px 16px rgba(0, 0, 0, .35); pointer-events: none; }
+  .emote.show { display: grid; animation: pop .3s cubic-bezier(.3, 1.8, .5, 1); }
+  .stamp { position: absolute; right: 7%; top: 17%; z-index: 3; font-family: "Noto Serif TC", serif; font-weight: 900; font-size: clamp(30px, 4.6vw, 58px); color: #fff; text-shadow: 0 4px 0 #8a2f22, 0 0 26px rgba(232, 196, 106, .7); transform: rotate(-6deg) scale(.5); opacity: 0; pointer-events: none; transition: opacity .25s, transform .35s cubic-bezier(.3, 1.8, .5, 1); white-space: nowrap; }
+  .stamp.show { opacity: 1; transform: rotate(-6deg) scale(1); }
+  .banner { position: absolute; left: 50%; top: 20%; transform: translate(-50%, -50%) scale(.6); opacity: 0; font-family: "Noto Serif TC", serif; font-weight: 900; font-size: clamp(32px, 5vw, 60px); color: #fff; text-shadow: 0 4px 0 #8a2f22, 0 0 30px rgba(232, 196, 106, .7); pointer-events: none; transition: opacity .35s, transform .35s cubic-bezier(.3, 1.6, .5, 1); white-space: nowrap; z-index: 3; }
+  .banner.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  .bigq { position: absolute; left: 50%; top: 34%; transform: translate(-50%, -50%); width: min(760px, 90%); text-align: center; font-family: "Noto Serif TC", serif; font-weight: 900; font-size: clamp(22px, 3vw, 36px); line-height: 1.55; color: #fff; text-shadow: 0 3px 0 #0b1530, 0 0 24px rgba(0, 0, 0, .7); opacity: 0; transition: opacity .6s; pointer-events: none; z-index: 3; text-wrap: balance; }
+  .bigq.show { opacity: 1; }
+  .veil { position: absolute; inset: 0; background: rgba(5, 10, 24, .45); opacity: 0; transition: opacity .6s; pointer-events: none; z-index: 2; }
+  .veil.show { opacity: 1; }
+  .card { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(520px, 92%); max-height: 92%; overflow-y: auto; background: rgba(12, 24, 54, .97); border: 1px solid rgba(232, 196, 106, .55); border-radius: 18px; padding: 24px 24px 20px; box-shadow: 0 20px 60px rgba(0, 0, 0, .5); display: none; z-index: 5; }
+  .card.show { display: block; animation: pop .35s cubic-bezier(.3, 1.5, .5, 1); }
+  @keyframes pop { from { transform: translate(-50%, -50%) scale(.85); opacity: 0; } }
+  .emote.show { animation-name: pop2; } @keyframes pop2 { from { transform: scale(.3); opacity: 0; } }
+  .card h3 { margin: 0 0 6px; font-size: 22px; }
+  .card .n { font-size: 11px; color: var(--gold); margin-bottom: 6px; }
+  .card .lead { color: var(--mute); font-size: 14.5px; line-height: 1.7; margin-bottom: 12px; }
+  .card textarea { min-height: 64px; margin-top: 6px; display: none; }
+  .card .go { margin-top: 12px; width: 100%; }
+  .card .quote { font-family: "Noto Serif TC", serif; font-size: 18px; color: var(--gold); margin: 14px 0; line-height: 1.8; }
+  .card .mine { background: rgba(255, 255, 255, .06); border-radius: 10px; padding: 10px 12px; margin: 10px 0; font-size: 14.5px; line-height: 1.7; }
+  .card .stat { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 14px 0; }
+  .card .stat div { background: rgba(255, 255, 255, .06); border-radius: 10px; padding: 10px; text-align: center; font-size: 12px; color: var(--mute); }
+  .card .stat b { display: block; font-size: 22px; color: var(--gold); font-family: "IBM Plex Mono", monospace; }
+  .opt { display: block; width: 100%; text-align: left; white-space: normal; border-radius: 12px; margin: 8px 0; padding: 12px 14px; line-height: 1.5; }
+  .opt.right { background: rgba(111, 211, 160, .2); border-color: var(--ok); }
+  .opt.wrong { background: rgba(224, 100, 79, .18); border-color: var(--red); }
+  .opt.pick { background: rgba(232, 196, 106, .2); border-color: var(--gold); }
+
+  .panel { border-left: 1px solid var(--line); background: rgba(9, 18, 40, .78); backdrop-filter: blur(6px); display: flex; flex-direction: column; min-height: 0; }
+  .tabs { display: flex; border-bottom: 1px solid var(--line); }
+  .tabs button { flex: 1; border-radius: 0; border: 0; background: transparent; padding: 14px 4px; color: var(--mute); font-weight: 500; border-bottom: 2px solid transparent; }
+  .tabs button.on { color: var(--ink); border-bottom-color: var(--gold); }
+  .pane { display: none; padding: 20px 22px 28px; overflow-y: auto; flex: 1; }
+  .pane.on { display: block; }
+  .pane h2 { font-size: 13px; color: var(--mute); margin: 0 0 12px; font-weight: 500; }
+  .classic { font-family: "Noto Serif TC", serif; font-size: 18.5px; line-height: 2.05; letter-spacing: .04em; }
+  .classic .hs { color: var(--gold); border-bottom: 1.5px dashed rgba(232, 196, 106, .7); cursor: pointer; padding: 0 1px; border-radius: 3px; transition: background .15s; }
+  .classic .hs:hover, .classic .hs.on { background: rgba(232, 196, 106, .18); }
+  .classic .hs.seen { border-bottom-style: solid; }
+  .classic .sp { color: var(--mute); font-size: 15px; }
+  .src { font-size: 12px; color: var(--mute); margin-top: 10px; }
+  .gloss { margin-top: 16px; padding: 14px 16px; border-radius: 12px; background: var(--card); border: 1px solid rgba(232, 196, 106, .35); min-height: 86px; }
+  .gloss .w { font-family: "Noto Serif TC", serif; font-size: 20px; color: var(--gold); }
+  .gloss .d { margin-top: 6px; font-size: 14.5px; line-height: 1.7; }
+  .gloss .fx { margin-top: 6px; font-size: 12px; color: var(--ok); }
+  .gloss.empty .d { color: var(--mute); }
+  .q { margin-bottom: 22px; }
+  .q .stem { font-size: 16px; line-height: 1.7; font-weight: 500; margin-bottom: 10px; }
+  .q .n { font-size: 11px; color: var(--gold); margin-bottom: 6px; }
+  .fb { font-size: 14px; line-height: 1.7; margin-top: 8px; color: var(--mute); }
+  .fb.ok { color: var(--ok); }
+  .locked { opacity: .35; pointer-events: none; }
+  .log { font-size: 12px; color: var(--mute); border-top: 1px solid var(--line); padding-top: 12px; margin-top: 8px; line-height: 1.8; }
+  .notice { font-size: 13.5px; line-height: 1.7; background: rgba(232, 196, 106, .1); border: 1px solid rgba(232, 196, 106, .4); border-radius: 10px; padding: 10px 12px; margin-bottom: 14px; }
+  .readbtn { padding: 6px 12px; font-size: 13px; margin-bottom: 10px; }
+  .layer { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; margin-bottom: 10px; background: rgba(14, 28, 60, .55); }
+  .layer .row { display: flex; align-items: center; gap: 8px; }
+  .layer img { height: 34px; width: 56px; object-fit: contain; background: rgba(255, 255, 255, .08); border-radius: 6px; }
+  .layer .name { flex: 1; font-weight: 700; font-size: 13.5px; }
+  .layer button { padding: 5px 10px; font-size: 12.5px; }
+  .layer input { display: none; }
+  details { margin-top: 6px; } summary { font-size: 12px; color: var(--gold); cursor: pointer; }
+  pre { white-space: pre-wrap; font-size: 11.5px; line-height: 1.6; background: rgba(0, 0, 0, .3); border-radius: 8px; padding: 10px; margin: 8px 0 6px; color: #d7e0f7; font-family: "IBM Plex Mono", monospace; }
+  #openAns { min-height: 80px; margin-top: 4px; }
+  @media (max-width: 900px) {
+    body { overflow: auto; }
+    .top { padding: 0 10px; gap: 6px; } .brand { white-space: nowrap; font-size: 15px; } .brand span { display: none; } .top button { white-space: nowrap; } .top button { padding: 5px 9px; font-size: 12px; }
+    .upwrap { grid-template-columns: 1fr; padding: 16px 12px 40px; } .dgrid { grid-template-columns: 1fr; } .dbtns button { flex: 1; }
+    #scrLesson { overflow-y: auto; }
+    .app, .app.reading { grid-template-columns: 1fr; height: auto; perspective: none; } .app:not(.reading) { grid-template-rows: calc(100vh - 54px); } .app.reading { grid-template-rows: 46vh auto; }
+    .app.reading .stage { position: sticky; top: 0; z-index: 3; background: var(--navy); }
+    .panel.leafpage { order: 0; animation: none; box-shadow: none; min-height: 50vh; } .leafpage::before { display: none; } .leafpage .tabs { padding: 12px 16px 0; } .leafpage .pane { padding: 8px 16px 28px; overflow: visible; } .leafpage .pane.on#pane-text { overflow: visible; } .leafpage .textwrap { overflow: visible; } .bookq { max-height: none; }
+    .tag .k, .hint { display: none; } .tag .t { font-size: 16px; }
+    .steps { top: auto; bottom: 62px; right: auto; left: 50%; transform: translateX(-50%); } .steps button { padding: 4px 7px; font-size: 11px; }
+    .controls { bottom: 12px; gap: 6px; } .controls button { padding: 8px 12px; font-size: 13px; }
+    .sub { bottom: 104px; padding: 10px 14px; } .sub .line { font-size: 15px; }
+    .counter { top: 52px; padding: 6px 10px; } .counter .v { font-size: 18px; }
+    .maphead { padding: 8px 12px; } .maphead .t { font-size: 16px; } .mapnote { display: none; } .mapact { top: 70px; right: 12px; } .mapact button { padding: 6px 10px; font-size: 12px; }
+    .dock { flex-direction: column; align-items: stretch; gap: 10px; bottom: 12px; } .mlabel b { font-size: 13px; } .mlabel span { font-size: 11px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { animation-duration: .01s !important; transition-duration: .01s !important; } }
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="brand" id="navHome"><b>翻頁島</b><span class="mono">PopIsle · Demo</span></div>
+  <button id="navUpload">老師上傳</button>
+  <button id="navMap">學習海圖</button>
+  <button id="navDash">老師後台</button>
+  <button id="navVoice" style="display:none" title="切換配音來源">語音：內建</button>
+  <button id="navSound" title="聲音">🔊</button>
+  <button id="navReset" title="清除示範進度">重置</button>
+</div>
+
+<section class="scr on" id="scrStart"><div class="hero">
+  <div class="k mono">Pop-up learning atlas · 立體書學習平台</div>
+  <h1>把教材，變成可以走進去的立體書</h1>
+  <p>老師上傳一課教材，海圖上就長出一座島。學生先看故事預告、猜一猜，再翻開立體書讀課文、回答問題。</p>
+  <div class="row">
+    <button class="primary" id="goTeacher">我是老師：上傳教材</button>
+    <button id="goStudent">直接體驗學生端（載入三課範例）</button>
+  </div>
+  <div class="flow"><span>① 上傳教材</span><i>→</i><span>② AI 解析、老師確認</span><i>→</i><span>③ 海圖長出島嶼</span><i>→</i><span>④ 立體書：預告・猜測・讀課文・揭曉・測驗</span></div>
+</div></section>
+
+<section class="scr scroll" id="scrUpload"><div class="upwrap">
+  <div class="box">
+    <h2>老師建立一課</h2>
+    <div class="chips" id="modeChips"><button data-m="topic" class="on">只給主題，AI 查課綱自編</button><button data-m="mat">上傳現成教材</button></div>
+    <div id="paneTopic">
+      <div class="sub2">沒有現成教材也可以。告訴 AI 年級、科目和主題，它會先查這個年級的課綱範圍和各版本的排課，再自己編寫課文、畫每一頁的插圖、出題，生成一本立體故事書。</div>
+      <div class="trow"><label class="fl">年級<select id="tpGrade"></select></label><label class="fl">科目<select id="tpSubj"><option>自然</option><option>國文</option><option>社會</option></select></label></div>
+      <label class="fl">主題<input id="tpTopic" maxlength="30" placeholder="例如：人體的器官認識"></label>
+      <label class="fl">補充說明（可不填）<input id="tpExtra" maxlength="80" placeholder="例如：多用生活中的例子；班上程度普通"></label>
+      <div class="uprow"><button id="tpExample">填入範例</button><span class="grow" id="tpInfo"></span><button class="primary" id="btnTopic">查課綱並生成 →</button></div>
+      <div class="fine">・<span id="aiBadge2">這個版本沒有連上 AI：只能示範內建的範例主題「人體的器官認識」。線上版可以輸入任何主題。</span><br>・課綱索引目前收錄國中七年級自然（生物）。其他年級和科目，AI 會依它對 108 課綱的了解編寫，並提醒老師核對。<br>・AI 用自己的話編寫，不會照抄出版社課本；發布前請老師確認內容正確。</div>
+    </div>
+    <div id="paneMat" style="display:none">
+    <div class="sub2">貼上課文，或上傳檔案（.txt、.docx、課本頁面的照片）。AI 會整理課文、分頁、配場景、出題，生成一本立體故事書。也可以直接用下面三課範例。</div>
+    <div class="chips" id="subjChips"></div>
+    <input id="upTitle" maxlength="12" placeholder="課名（貼上自己的教材時填寫，例如：光合作用）">
+    <textarea id="material" spellcheck="false"></textarea>
+    <div class="uprow">
+      <button id="btnFile">上傳檔案</button><input type="file" id="fileIn" accept=".txt,.md,.docx,text/plain,image/*" style="display:none">
+      <span class="grow" id="matInfo"></span>
+      <button class="primary" id="btnGen">生成立體書 →</button>
+    </div>
+    <div class="fine">也可以貼上自己的教材：清空上面的文字、貼上課文、填課名，再按「生成立體書」，它會變成海圖上的一座新島。<br>・<span id="aiBadge">AI 解析：這個版本沒有連上 AI，會用離線規則（找重點詞、課文填空出題）</span><br>・想指定重點詞，用【】標起來，例如【光合作用】。<br>・場景會從素材庫的三組場景裡選一組；三課範例的解析結果是預先製作的。</div>
+    </div>
+  </div>
+  <div class="box">
+    <h2>生成流程</h2>
+    <div class="sub2" id="genLead">按下「生成立體書」後，這裡會顯示每一步的結果。</div>
+    <ul class="steps2" id="genSteps"></ul>
+    <div class="uprow"><span class="grow"></span><button class="primary" id="btnToMap" style="display:none">前往學習海圖，看島嶼長出來 →</button></div>
+    <div id="confirmBox" style="display:none"></div>
+  </div>
+</div></section>
+
+<section class="scr" id="scrMap">
+  <canvas id="map3d"></canvas>
+  <div id="mapLabels"></div>
+  <div class="maphead"><div class="k mono">Learning atlas · 學習海圖</div><div class="t">七年級上學期　<b id="mapCount"></b></div><div class="mapnote" id="mapNote"></div></div>
+  <div class="mapact"><button id="mapUpload">＋ 上傳教材</button><button id="mapAll">載入三課範例</button></div>
+  <div class="dock" id="dock"><div><div class="k mono" id="dockK"></div><div class="t" id="dockT"></div><div class="b" id="dockB"></div></div><div class="dbtns"><button id="dockReview" style="display:none">複習一題</button><button class="primary" id="dockGo"></button></div></div>
+  <div class="card" id="reviewCard"><div class="n mono" id="rvK"></div><h3 id="rvQ" style="font-size:18px;line-height:1.6"></h3><div id="rvOpts"></div><div class="fb" id="rvF"></div><button class="go" id="rvClose">關閉</button></div>
+  <div class="card" id="planCard"><div class="n mono" id="planK"></div><h3 id="planT"></h3><div class="lead" id="planB" style="color:var(--ink)"></div><button class="go" id="planClose">知道了</button></div>
+</section>
+
+<section class="scr scroll" id="scrDash"><div class="dwrap"><div class="dtop"><div><div class="k mono">Teacher dashboard · 老師後台</div><h1>全班學得怎麼樣？</h1></div><div class="fine" style="max-width:420px;margin:0">全班的數字是模擬數據，用來示範後台的樣子；每張卡片最下面那一行是這台裝置的真實紀錄。</div></div><div id="dashBody"></div></div></section>
+
+<section class="scr" id="scrLesson"><div class="app">
+  <div class="stage" id="stage">
+    <canvas id="gl"></canvas>
+    <div class="veil" id="veil"></div>
+    <div class="bar t"></div><div class="bar b"></div>
+    <div class="tag"><div class="k mono" id="tagK"></div><div class="t"><span id="tagT"></span> <b id="pageTag"></b></div></div>
+    <div class="counter" id="counterBox"><div class="k mono" id="counterK"></div><div class="v" id="count">0</div></div>
+    <div class="steps" id="steps"><button id="st0">① 預告</button><button id="st1">② 猜一猜</button><button id="st2">③ 讀課文</button><button id="st3" disabled>④ 揭曉</button><button id="st4" disabled>⑤ 測驗</button></div>
+    <div class="emote" id="emote"></div>
+    <div class="stamp" id="stamp"></div>
+    <div class="banner" id="banner"></div>
+    <div class="sub" id="sub"><span class="who" id="subWho"></span><span class="line" id="subLine"></span></div>
+    <div class="bigq" id="bigq"></div>
+    <figure id="pageArt"><img id="pageArtImg" alt=""><figcaption id="pageArtCap"></figcaption></figure>
+    <div class="hint" id="hint">拖曳可轉動立體書</div>
+    <div class="card" id="predict">
+      <div class="n mono">② 猜一猜 · 帶著問題去讀</div><h3 id="predQ"></h3>
+      <div class="lead">沒有標準答案，選一個最接近你想法的。讀完課文後，我們會回來對照。</div>
+      <div id="predOpts"></div><textarea id="guessText" placeholder="寫下你的猜測"></textarea>
+      <button class="primary go" id="btnGuess" disabled>送出猜測，翻開課文找答案 →</button>
+    </div>
+    <div class="card" id="reveal">
+      <div class="n mono">④ 揭曉</div><h3 id="revT"></h3><div class="mine" id="mine"></div><div class="lead" id="revB"></div><div class="goalbox" id="revSumBox" style="display:none"><div class="mono gk">重點整理</div><ul id="revSum"></ul></div><div class="quote" id="revQ"></div>
+      <div style="display:flex;gap:8px"><button id="btnRevealClose" style="flex:1">再看看這一頁</button><button class="primary" id="btnToExam" style="flex:1">前往測驗 →</button></div>
+    </div>
+    <div class="card" id="doneCard">
+      <div class="n mono">Island cleared · 完成這座島</div><h3 id="doneT"></h3>
+      <div class="stat"><div><b id="dScore"></b>測驗答對</div><div><b id="dTries"></b>提問嘗試次數</div><div><b id="dTerms"></b>點過的字詞</div></div>
+      <div class="lead" id="doneB"></div>
+      <div style="display:flex;gap:8px"><button id="btnStay" style="flex:1">留在這一頁</button><button class="primary" id="btnBackMap" style="flex:1">回到學習海圖 →</button></div>
+    </div>
+    <div class="controls" id="teaserControls"><button id="btnPlay">⏸ 暫停</button><button id="btnTeaserReplay">⟲ 重看</button><button id="btnSkip" class="primary">跳過預告 ⏭</button></div>
+    <div class="controls" id="readControls" style="display:none"><button id="btnReplay">⟲ 重播翻頁</button><button id="btnTurn" class="primary">← 回到上一頁</button></div>
+    <div class="prog" id="prog"></div>
+  </div>
+  <aside class="panel leafpage" id="leafPage">
+    <div class="tabs"><span class="pgno mono" id="leafNo"></span><button class="on" data-tab="text">課文</button><button data-tab="quiz">紀錄</button><button data-tab="ai">素材</button></div>
+    <div class="pane on" id="pane-text">
+      <div class="goalbox mini" id="goalBox"><div class="mono gk">學習目標</div><ul id="goals"></ul></div>
+      <div class="tools"><button class="readbtn" id="btnRead">🔈 朗讀課文</button><button class="readbtn" id="btnPlain">顯示白話翻譯</button><button class="readbtn" id="btnArt" style="display:none">🔍 放大插圖</button><span class="grow"></span><button class="readbtn" id="fontDown" title="字小一點">A−</button><button class="readbtn" id="fontUp" title="字大一點">A＋</button></div>
+      <div class="textwrap" id="textWrap">
+        <div class="classic" id="classic"></div>
+        <div class="plain" id="plain" style="display:none"></div>
+        <div class="gloss empty" id="gloss"><div class="w">　</div><div class="d">點金色字詞，看解釋和立體書的變化。</div></div>
+      </div>
+      <div class="pdots" id="pageDots" style="display:none"></div>
+      <div class="bookq" id="bookQ"></div>
+    </div>
+    <div class="pane" id="pane-quiz"><div id="quizBox"></div><div class="log" id="log"></div></div>
+    <div class="pane" id="pane-exam"><div class="notice" id="examLock">測驗直接出現在立體書上。</div><div id="examBox"></div></div>
+    <div class="pane" id="pane-ai">
+      <div class="src" id="src"></div>
+      <div class="notice">這一頁的紙雕由程式繪製。把 AI 生成、去背後的 PNG 上傳到對應圖層，就會即時換進立體書，並自動加上白色紙邊。</div>
+      <h2 class="mono">共用風格前綴 · Style prefix</h2><pre id="stylePrompt"></pre><button id="copyStyle" class="readbtn">複製風格前綴</button>
+      <h2 class="mono" style="margin-top:16px">圖層 · 由後到前</h2><div id="layers"></div>
+    </div>
+  </aside>
+</div></section>
+
+<script src="js/three.min.js"></script>
+<script src="js/art.js"></script>
+<script src="js/lessons.js"></script>
+<script src="js/voice.js"></script>
+<script src="js/curriculum.js"></script>
+<script src="js/demo_organs.js"></script>
+<script src="js/custom.js"></script>
+<script src="js/map3d.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
